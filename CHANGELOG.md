@@ -5,6 +5,20 @@ All notable changes to describe will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-05-29
+
+### Added
+- **🎯 v1.0 STABLE**: Full conversational infrastructure platform
+- **describe• branding**: Complete rebrand with Inter typography and animated dot
+- **Production ready**: Stable API, comprehensive documentation, real-world examples
+- **New README**: RAG system in 7 prompts, GitHub PR analyzer, SQL chat interface examples
+- **Philosophy refined**: Infrastructure as conversation, not configuration
+
+### Changed
+- **Positioning**: From tool to paradigm - removing the need to think about tools
+- **Documentation**: Focus on immediate value and mind-bending possibilities
+- **Version bump**: Signaling production readiness and API stability
+
 ## [0.2.0] - 2025-05-28
 
 ### Changed
