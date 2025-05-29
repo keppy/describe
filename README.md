@@ -1,5 +1,7 @@
 # describe•
 
+[![npm version](https://badge.fury.io/js/%40keppylab%2Fdescribe.svg)](https://badge.fury.io/js/%40keppylab%2Fdescribe)
+
 Watch me build a complete RAG system in 7 prompts:
 
 ```
