@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+const { spawn } = require('child_process');
+const path = require('path');
+const os = require('os');
+
+const describePath = path.join(__dirname, '..', 'describe.py');
+const venvPath = path.join(os.homedir(), '.describe', 'venv');
+
+// Use Python from venv
+let pythonPath;
+if (process.platform === 'win32') {
+    pythonPath = path.join(venvPath, 'Scripts', 'python.exe');
+} else {
+    pythonPath = path.join(venvPath, 'bin', 'python');
+}
+
+// Fallback to system Python if venv doesn't exist
+const fs = require('fs');
+if (!fs.existsSync(pythonPath)) {
+    console.error('describe virtual environment not found. Running setup...');
+    // Re-run setup
+    const setupPath = path.join(__dirname, '..', 'scripts', 'setup.js');
+    require(setupPath);
+    process.exit(1);
+}
+
+const child = spawn(pythonPath, [describePath, ...process.argv.slice(2)], {
+    stdio: 'inherit',
+    env: { ...process.env, PYTHONUNBUFFERED: '1' }
+});
+
+child.on('exit', (code) => {
+    process.exit(code || 0);
+});

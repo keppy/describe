@@ -1,0 +1,82 @@
+[project]
+name = "describe"
+version = "0.2.0"
+description = "describe - Speak systems into existence"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    { name = "James Dominguez", email = "james@keppylab.com" }
+]
+keywords = ["mcp", "describe", "infrastructure", "conversational", "model-context-protocol"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Software Distribution",
+]
+
+dependencies = [
+    "aiohttp>=3.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "pytest-cov>=4.1.0",
+]
+
+[project.scripts]
+describe = "describe:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "ARG",  # flake8-unused-arguments
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["describe"]
+omit = ["tests/*", "scripts/*"]
+
+[tool.uv]
+# uv specific configuration
+preview = true
+
+[tool.uv.pip]
+# Use uv's pip interface for better compatibility
+system = false
+compile = true
