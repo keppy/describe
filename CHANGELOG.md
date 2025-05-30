@@ -5,6 +5,24 @@ All notable changes to describe will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-05-30
+
+### Fixed
+- **🔧 NPX execution**: Fixed critical issue where `npx @keppylab/describe` failed in Claude Desktop
+- **Environment setup**: Improved automatic Python environment detection and dependency installation
+- **MCP server startup**: Enhanced reliability for MCP server mode when running via npx
+- **Fallback mechanisms**: Added robust fallback to system Python when virtual environment setup fails
+
+### Changed
+- **Binary wrapper**: Completely rewritten Node.js wrapper with async setup verification
+- **Setup script**: Enhanced setup process with better error handling and environment validation
+- **Dependency checking**: Added runtime verification of Python dependencies (aiohttp)
+
+### Technical Details
+- **Auto-setup**: Automatically creates Python virtual environment and installs dependencies on first run
+- **Cross-platform**: Improved Windows, macOS, and Linux compatibility for npx execution
+- **MCP integration**: Seamless integration with Claude Desktop using standard npx configuration
+
 ## [1.0.0] - 2025-05-29
 
 ### Added

@@ -68,9 +68,10 @@ if (!fs.existsSync(binDir)) {
 }
 
 const binScript = `#!/usr/bin/env node
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
 const describePath = path.join(__dirname, '..', 'describe.py');
 const venvPath = path.join(os.homedir(), '.describe', 'venv');
@@ -83,23 +84,65 @@ if (process.platform === 'win32') {
     pythonPath = path.join(venvPath, 'bin', 'python');
 }
 
-// Fallback to system Python if venv doesn't exist
-const fs = require('fs');
-if (!fs.existsSync(pythonPath)) {
-    console.error('describe virtual environment not found. Running setup...');
-    // Re-run setup
-    const setupPath = path.join(__dirname, '..', 'scripts', 'setup.js');
-    require(setupPath);
-    process.exit(1);
+// Check if venv exists and has dependencies
+function checkEnvironment() {
+    if (!fs.existsSync(pythonPath)) {
+        return false;
+    }
+    
+    // Quick check if aiohttp is available
+    try {
+        execSync(\`\${pythonPath} -c "import aiohttp"\`, { stdio: 'ignore' });
+        return true;
+    } catch {
+        return false;
+    }
 }
 
-const child = spawn(pythonPath, [describePath, ...process.argv.slice(2)], {
-    stdio: 'inherit',
-    env: { ...process.env, PYTHONUNBUFFERED: '1' }
-});
+// Auto-setup if needed
+async function ensureSetup() {
+    if (!checkEnvironment()) {
+        console.error('Setting up describe environment...');
+        try {
+            const setupPath = path.join(__dirname, '..', 'scripts', 'setup.js');
+            require(setupPath);
+            
+            // Give setup time to complete
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            if (!checkEnvironment()) {
+                throw new Error('Setup verification failed');
+            }
+        } catch (error) {
+            console.error('Environment setup failed, trying system Python with pip install...');
+            try {
+                execSync('pip3 install aiohttp>=3.9.0', { stdio: 'inherit' });
+                pythonPath = 'python3';
+            } catch (pipError) {
+                console.error('Failed to install dependencies. Please run: pip3 install aiohttp>=3.9.0');
+                process.exit(1);
+            }
+        }
+    }
+}
 
-child.on('exit', (code) => {
-    process.exit(code || 0);
+// Main execution
+async function main() {
+    await ensureSetup();
+    
+    const child = spawn(pythonPath, [describePath, ...process.argv.slice(2)], {
+        stdio: 'inherit',
+        env: { ...process.env, PYTHONUNBUFFERED: '1' }
+    });
+
+    child.on('exit', (code) => {
+        process.exit(code || 0);
+    });
+}
+
+main().catch(error => {
+    console.error('Failed to start describe:', error.message);
+    process.exit(1);
 });
 `;
 
