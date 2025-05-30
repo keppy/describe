@@ -5,6 +5,25 @@ All notable changes to describe will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-05-30
+
+### Fixed
+- **🔧 Node.js compatibility**: Added explicit Node.js 18+ requirement with clear error messages
+- **Python environment**: Fixed "externally managed environment" pip install issues on modern systems
+- **Dependency installation**: Added multiple fallback methods for aiohttp installation
+- **Claude Desktop integration**: Eliminated npm/npx version conflicts that caused startup failures
+
+### Changed
+- **Simplified architecture**: Removed async/await complexity from Node.js wrapper
+- **Better error handling**: Clearer error messages and installation instructions
+- **Python detection**: Improved Python version detection across different systems
+- **Pip compatibility**: Added --break-system-packages support for modern Python distributions
+
+### Technical Details
+- **Installation methods**: Tries --user, --break-system-packages, and provides manual instructions
+- **Cross-platform**: Enhanced Windows, macOS, and Linux compatibility
+- **Version validation**: Both Node.js and Python version requirements are validated upfront
+
 ## [1.0.1] - 2025-05-30
 
 ### Fixed

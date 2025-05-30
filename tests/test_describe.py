@@ -70,7 +70,7 @@ async def test_search_functionality(describe):
         "database-tool": {"description": "Database management MCP"},
     }
 
-    with patch.object(describe, '_fetch_registry', new_callable=AsyncMock) as mock_fetch:
+    with patch.object(describe, "_fetch_registry", new_callable=AsyncMock) as mock_fetch:
         results = await describe.search("test")
 
     assert len(results) == 2
@@ -83,7 +83,7 @@ async def test_install_npm_package(describe):
     """Test npm package installation"""
     describe.registry = {"test-package": {"npm": "@test/package", "description": "Test package"}}
 
-    with patch.object(describe, '_fetch_registry', new_callable=AsyncMock):
+    with patch.object(describe, "_fetch_registry", new_callable=AsyncMock):
         with patch("asyncio.create_subprocess_exec") as mock_exec:
             mock_process = AsyncMock()
             mock_process.communicate = AsyncMock(return_value=(b"", b""))
@@ -96,7 +96,12 @@ async def test_install_npm_package(describe):
             assert result["package"] == "@test/package"
             assert result["status"] == "installed"
             mock_exec.assert_called_once_with(
-                "npm", "install", "-g", "@test/package", stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                "npm",
+                "install",
+                "-g",
+                "@test/package",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
 
 
@@ -106,8 +111,8 @@ async def test_install_already_installed(describe):
     describe.installed = {"existing-package": {"method": "npm", "details": {}}}
     describe.registry = {"existing-package": {"npm": "@existing/package"}}
 
-    with patch.object(describe, '_fetch_registry', new_callable=AsyncMock):
-        with patch.object(describe, '_load_installed', new_callable=AsyncMock):
+    with patch.object(describe, "_fetch_registry", new_callable=AsyncMock):
+        with patch.object(describe, "_load_installed", new_callable=AsyncMock):
             result = await describe.install("existing-package")
 
     assert "error" in result
@@ -119,7 +124,10 @@ async def test_uninstall_package(describe):
     """Test package uninstallation"""
     # Setup installed package
     describe.installed = {
-        "test-package": {"method": "git", "details": {"path": "/tmp/test_describe/repos/test-package"}}
+        "test-package": {
+            "method": "git",
+            "details": {"path": "/tmp/test_describe/repos/test-package"},
+        }
     }
 
     with patch("pathlib.Path.exists", return_value=True):
@@ -154,7 +162,9 @@ async def test_config_list_empty():
     """Test config-list tool with no configs"""
     request = {"method": "tools/call", "params": {"name": "config-list", "arguments": {}}}
 
-    with patch.object(MCPConfigManager, "load_config", new_callable=AsyncMock, return_value={"mcpServers": {}}):
+    with patch.object(
+        MCPConfigManager, "load_config", new_callable=AsyncMock, return_value={"mcpServers": {}}
+    ):
         response = await handle_request(request)
 
     assert "content" in response

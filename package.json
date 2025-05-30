@@ -1,6 +1,6 @@
 {
   "name": "@keppylab/describe",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "describe - Speak systems into existence. Transform infrastructure from configuration to conversation.",
   "main": "describe.py",
   "bin": {

@@ -59,7 +59,7 @@ class MCPPackageManager:
         """Load the tome of installed servers"""
         try:
             self.installed = json.loads(INSTALLED_DB.read_text())
-        except:
+        except Exception:
             self.installed = {}
 
     async def _save_installed(self):
@@ -73,53 +73,53 @@ class MCPPackageManager:
             "filesystem": {
                 "id": "filesystem",
                 "description": "MCP server for filesystem access",
-                "npm": "@modelcontextprotocol/server-filesystem"
+                "npm": "@modelcontextprotocol/server-filesystem",
             },
             "postgres": {
-                "id": "postgres", 
+                "id": "postgres",
                 "description": "Read-only database access with schema inspection",
-                "npm": "@modelcontextprotocol/server-postgres"
+                "npm": "@modelcontextprotocol/server-postgres",
             },
             "brave-search": {
                 "id": "brave-search",
                 "description": "Web and local search using Brave's Search API",
-                "npm": "@modelcontextprotocol/server-brave-search"
+                "npm": "@modelcontextprotocol/server-brave-search",
             },
             "github": {
                 "id": "github",
-                "description": "Repository management, file operations, and GitHub API integration", 
-                "npm": "@modelcontextprotocol/server-github"
+                "description": "Repository management, file operations, and GitHub API integration",
+                "npm": "@modelcontextprotocol/server-github",
             },
             "git": {
                 "id": "git",
                 "description": "Tools to read, search, and manipulate Git repositories",
-                "npm": "@modelcontextprotocol/server-git"
+                "npm": "@modelcontextprotocol/server-git",
             },
             "fetch": {
                 "id": "fetch",
                 "description": "Web content fetching and conversion for efficient LLM usage",
-                "npm": "@modelcontextprotocol/server-fetch"
+                "npm": "@modelcontextprotocol/server-fetch",
             },
             "puppeteer": {
-                "id": "puppeteer", 
+                "id": "puppeteer",
                 "description": "Browser automation and web scraping",
-                "npm": "@modelcontextprotocol/server-puppeteer"
+                "npm": "@modelcontextprotocol/server-puppeteer",
             },
             "memory": {
                 "id": "memory",
                 "description": "Knowledge graph-based persistent memory system",
-                "npm": "@modelcontextprotocol/server-memory"
+                "npm": "@modelcontextprotocol/server-memory",
             },
             "gdrive": {
                 "id": "gdrive",
                 "description": "File access and search capabilities for Google Drive",
-                "npm": "@modelcontextprotocol/server-gdrive"
+                "npm": "@modelcontextprotocol/server-gdrive",
             },
             "google-maps": {
                 "id": "google-maps",
                 "description": "Location services, directions, and place details",
-                "npm": "@modelcontextprotocol/server-google-maps"
-            }
+                "npm": "@modelcontextprotocol/server-google-maps",
+            },
         }
 
     async def list_available(self) -> list[dict[str, Any]]:
@@ -169,7 +169,7 @@ class MCPPackageManager:
 
         return result
 
-    async def _install_npm(self, name: str, package: str) -> dict[str, Any]:
+    async def _install_npm(self, _name: str, package: str) -> dict[str, Any]:
         """Channel the npm spirits"""
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -182,7 +182,7 @@ class MCPPackageManager:
         except Exception as e:
             return {"error": str(e)}
 
-    async def _install_docker(self, name: str, image: str) -> dict[str, Any]:
+    async def _install_docker(self, _name: str, image: str) -> dict[str, Any]:
         """Summon the container daemon"""
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -357,23 +357,25 @@ async def async_stdin():
 async def cli_main():
     """CLI interface for describe"""
     import sys
-    
+
     if len(sys.argv) < 2:
         print("Usage: describe <command> [args...]")
-        print("Commands: list, search, install, uninstall, installed, config-add, config-remove, config-list, config-backup, config-restore")
+        print(
+            "Commands: list, search, install, uninstall, installed, config-add, config-remove, config-list, config-backup, config-restore"
+        )
         return
-    
+
     command = sys.argv[1]
     args = sys.argv[2:] if len(sys.argv) > 2 else []
-    
+
     describe = MCPPackageManager()
-    
+
     try:
         if command == "list":
             result = await describe.list_available()
             for server in result:
                 print(f"{server['name']}: {server['description']}")
-        
+
         elif command == "search":
             if not args:
                 print("Usage: describe search <query>")
@@ -381,7 +383,7 @@ async def cli_main():
             result = await describe.search(args[0])
             for server in result:
                 print(f"{server['name']}: {server['description']}")
-        
+
         elif command == "install":
             if not args:
                 print("Usage: describe install <server_name>")
@@ -391,7 +393,7 @@ async def cli_main():
                 print(f"Error: {result['error']}")
             else:
                 print(f"✅ Installed {args[0]}")
-        
+
         elif command == "uninstall":
             if not args:
                 print("Usage: describe uninstall <server_name>")
@@ -401,16 +403,23 @@ async def cli_main():
                 print(f"Error: {result['error']}")
             else:
                 print(f"✅ Uninstalled {args[0]}")
-        
+
         elif command == "installed":
             result = await describe.list_installed()
             for server in result:
                 print(f"{server['name']}: {server['method']}")
-        
-        elif command in ["config-add", "config-remove", "config-list", "config-backup", "config-restore"]:
+
+        elif command in [
+            "config-add",
+            "config-remove",
+            "config-list",
+            "config-backup",
+            "config-restore",
+        ]:
             from config_manager import MCPConfigManager
+
             config_mgr = MCPConfigManager()
-            
+
             if command == "config-add":
                 if not args:
                     print("Usage: describe config-add <server_name>")
@@ -422,34 +431,42 @@ async def cli_main():
                 server_info = describe.installed[args[0]]
                 server_config = config_mgr.generate_server_config(server_info["details"])
                 result = await config_mgr.add_server(args[0], server_config)
-                print(f"✅ Added {args[0]} to MCP config" if result else f"❌ Failed to add {args[0]}")
-            
+                print(
+                    f"✅ Added {args[0]} to MCP config" if result else f"❌ Failed to add {args[0]}"
+                )
+
             elif command == "config-remove":
                 if not args:
                     print("Usage: describe config-remove <server_name>")
                     return
                 result = await config_mgr.remove_server(args[0])
-                print(f"✅ Removed {args[0]} from config" if result else f"❌ Failed to remove {args[0]}")
-            
+                print(
+                    f"✅ Removed {args[0]} from config"
+                    if result
+                    else f"❌ Failed to remove {args[0]}"
+                )
+
             elif command == "config-list":
                 result = await config_mgr.list_configured()
                 for server in result:
-                    print(f"{server['name']}: {server['command']} {' '.join(server.get('args', []))}")
-            
+                    print(
+                        f"{server['name']}: {server['command']} {' '.join(server.get('args', []))}"
+                    )
+
             elif command == "config-backup":
                 backup_path = await config_mgr.backup_config()
                 print(f"✅ Config backed up to: {backup_path}")
-            
+
             elif command == "config-restore":
                 if not args:
                     print("Usage: describe config-restore <backup_file>")
                     return
                 result = await config_mgr.restore_backup(args[0])
-                print(f"✅ Config restored" if result else f"❌ Failed to restore config")
-        
+                print("✅ Config restored" if result else "❌ Failed to restore config")
+
         else:
             print(f"Unknown command: {command}")
-    
+
     finally:
         await describe.cleanup()
 

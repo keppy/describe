@@ -100,7 +100,7 @@ class MCPConfigManager:
             return self.config
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
-            raise Exception(f"Failed to load MCP config: {e}")
+            raise Exception(f"Failed to load MCP config: {e}") from e
 
     async def backup_config(self) -> str:
         """Create a backup of the current config"""
@@ -116,7 +116,7 @@ class MCPConfigManager:
             return str(backup_path)
         except Exception as e:
             logger.error(f"Failed to backup config: {e}")
-            raise Exception(f"Failed to backup config: {e}")
+            raise Exception(f"Failed to backup config: {e}") from e
 
     async def save_config(self) -> None:
         """Save the current configuration"""
@@ -133,7 +133,7 @@ class MCPConfigManager:
             logger.info(f"Saved config to: {self.config_path}")
         except Exception as e:
             logger.error(f"Failed to save config: {e}")
-            raise Exception(f"Failed to save config: {e}")
+            raise Exception(f"Failed to save config: {e}") from e
 
     async def add_server(self, name: str, server_config: dict[str, Any]) -> dict[str, Any]:
         """Add a server to the configuration"""

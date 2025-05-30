@@ -4,62 +4,83 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
+// Check Node.js version compatibility
+const nodeVersion = process.version;
+const majorVersion = parseInt(nodeVersion.split('.')[0].substring(1));
+
+if (majorVersion < 18) {
+    console.error(`Error: Node.js ${nodeVersion} is not supported. Please use Node.js 18 or higher.`);
+    process.exit(1);
+}
+
 const describePath = path.join(__dirname, '..', 'describe.py');
-const venvPath = path.join(os.homedir(), '.describe', 'venv');
 
-// Use Python from venv
-let pythonPath;
-if (process.platform === 'win32') {
-    pythonPath = path.join(venvPath, 'Scripts', 'python.exe');
-} else {
-    pythonPath = path.join(venvPath, 'bin', 'python');
-}
-
-// Check if venv exists and has dependencies
-function checkEnvironment() {
-    if (!fs.existsSync(pythonPath)) {
-        return false;
-    }
+// Find Python - try multiple common locations
+function findPython() {
+    const pythonCandidates = ['python3', 'python', 'python3.12', 'python3.11', 'python3.10', 'python3.9'];
     
-    // Quick check if aiohttp is available
-    try {
-        execSync(`${pythonPath} -c "import aiohttp"`, { stdio: 'ignore' });
-        return true;
-    } catch {
-        return false;
+    for (const pythonCmd of pythonCandidates) {
+        try {
+            const result = execSync(`${pythonCmd} --version`, { encoding: 'utf8', stdio: 'pipe' });
+            const version = result.trim();
+            if (version.includes('Python 3.')) {
+                const majorMinor = version.match(/Python 3\.(\d+)/);
+                if (majorMinor && parseInt(majorMinor[1]) >= 9) {
+                    return pythonCmd;
+                }
+            }
+        } catch (e) {
+            // Continue to next candidate
+        }
     }
+    return null;
 }
 
-// Auto-setup if needed
-async function ensureSetup() {
-    if (!checkEnvironment()) {
-        console.error('Setting up describe environment...');
-        try {
-            const setupPath = path.join(__dirname, '..', 'scripts', 'setup.js');
-            require(setupPath);
-            
-            // Give setup time to complete
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            if (!checkEnvironment()) {
-                throw new Error('Setup verification failed');
-            }
-        } catch (error) {
-            console.error('Environment setup failed, trying system Python with pip install...');
+// Install aiohttp if needed
+function ensureAiohttp(pythonCmd) {
+    try {
+        execSync(`${pythonCmd} -c "import aiohttp"`, { stdio: 'ignore' });
+        return true;
+    } catch (e) {
+        console.error('Installing aiohttp...');
+        
+        // Try different installation methods
+        const installMethods = [
+            `${pythonCmd} -m pip install --user "aiohttp>=3.9.0"`,
+            `${pythonCmd} -m pip install --user --break-system-packages "aiohttp>=3.9.0"`,
+            `${pythonCmd} -m pip install "aiohttp>=3.9.0" --break-system-packages`
+        ];
+        
+        for (const method of installMethods) {
             try {
-                execSync('pip3 install aiohttp>=3.9.0', { stdio: 'inherit' });
-                pythonPath = 'python3';
-            } catch (pipError) {
-                console.error('Failed to install dependencies. Please run: pip3 install aiohttp>=3.9.0');
-                process.exit(1);
+                execSync(method, { stdio: 'inherit' });
+                return true;
+            } catch (installError) {
+                // Continue to next method
             }
         }
+        
+        console.error('Failed to install aiohttp automatically.');
+        console.error('Please install manually:');
+        console.error('  pip3 install --user aiohttp>=3.9.0');
+        console.error('  OR: pip3 install --break-system-packages aiohttp>=3.9.0');
+        console.error('  OR: pipx install aiohttp>=3.9.0');
+        return false;
     }
 }
 
 // Main execution
-async function main() {
-    await ensureSetup();
+function main() {
+    const pythonPath = findPython();
+    
+    if (!pythonPath) {
+        console.error('Error: Python 3.9+ not found. Please install Python 3.9 or higher.');
+        process.exit(1);
+    }
+    
+    if (!ensureAiohttp(pythonPath)) {
+        process.exit(1);
+    }
     
     const child = spawn(pythonPath, [describePath, ...process.argv.slice(2)], {
         stdio: 'inherit',
@@ -69,9 +90,11 @@ async function main() {
     child.on('exit', (code) => {
         process.exit(code || 0);
     });
+    
+    child.on('error', (error) => {
+        console.error('Failed to start describe:', error.message);
+        process.exit(1);
+    });
 }
 
-main().catch(error => {
-    console.error('Failed to start describe:', error.message);
-    process.exit(1);
-});
+main();
