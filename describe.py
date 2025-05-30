@@ -246,25 +246,51 @@ class MCPPackageManager:
 async def handle_request(request: dict[str, Any]) -> dict[str, Any]:
     """The grand dispatcher"""
     describe = MCPPackageManager()
+    request_id = request.get("id")
 
     try:
         method = request.get("method", "")
         params = request.get("params", {})
 
-        if method == "tools/list":
+        # Handle MCP protocol initialization
+        if method == "initialize":
             return {
-                "tools": [
-                    {"name": "list", "description": "List all available MCP servers"},
-                    {"name": "search", "description": "Search for MCP servers"},
-                    {"name": "install", "description": "Install an MCP server"},
-                    {"name": "uninstall", "description": "Remove an installed server"},
-                    {"name": "installed", "description": "List installed servers"},
-                    {"name": "config-add", "description": "Add installed server to MCP config"},
-                    {"name": "config-remove", "description": "Remove server from MCP config"},
-                    {"name": "config-list", "description": "List servers in MCP config"},
-                    {"name": "config-backup", "description": "Backup current MCP config"},
-                    {"name": "config-restore", "description": "Restore MCP config from backup"},
-                ]
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {}
+                    },
+                    "serverInfo": {
+                        "name": "describe",
+                        "version": "1.0.3"
+                    }
+                }
+            }
+
+        elif method == "initialized":
+            # No response needed for initialized notification
+            return None
+
+        elif method == "tools/list":
+            return {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "tools": [
+                        {"name": "list", "description": "List all available MCP servers"},
+                        {"name": "search", "description": "Search for MCP servers"},
+                        {"name": "install", "description": "Install an MCP server"},
+                        {"name": "uninstall", "description": "Remove an installed server"},
+                        {"name": "installed", "description": "List installed servers"},
+                        {"name": "config-add", "description": "Add installed server to MCP config"},
+                        {"name": "config-remove", "description": "Remove server from MCP config"},
+                        {"name": "config-list", "description": "List servers in MCP config"},
+                        {"name": "config-backup", "description": "Backup current MCP config"},
+                        {"name": "config-restore", "description": "Restore MCP config from backup"},
+                    ]
+                }
             }
 
         elif method == "tools/call":
@@ -318,12 +344,23 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any]:
             else:
                 result = {"error": f"Unknown tool: {tool}"}
 
-            return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+            return {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "content": [{"type": "text", "text": json.dumps(result, indent=2)}]
+                }
+            }
+
+        else:
+            return {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {"code": -32601, "message": "Method not found"}
+            }
 
     finally:
         await describe.cleanup()
-
-    return {"error": {"code": -32601, "message": "Method not found"}}
 
 
 async def main():
@@ -334,8 +371,9 @@ async def main():
         try:
             request = json.loads(line)
             response = await handle_request(request)
-            print(json.dumps(response))
-            sys.stdout.flush()
+            if response is not None:  # Some methods like 'initialized' don't need a response
+                print(json.dumps(response))
+                sys.stdout.flush()
         except Exception as e:
             logger.error(f"Error: {e}")
 

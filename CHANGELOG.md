@@ -5,6 +5,24 @@ All notable changes to describe will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-05-30
+
+### Fixed
+- **🔧 MCP Protocol**: Fixed JSON-RPC 2.0 protocol compliance for Claude Desktop integration
+- **Initialize handshake**: Added proper `initialize` and `initialized` method handling
+- **Response format**: Fixed malformed JSON responses that caused validation errors
+- **Protocol version**: Added correct protocolVersion "2024-11-05" support
+
+### Changed
+- **JSON-RPC compliance**: All responses now include proper "jsonrpc": "2.0" and request IDs
+- **Error handling**: Improved error responses with proper JSON-RPC error format
+- **Tool metadata**: Added proper tool schema definitions for MCP compatibility
+
+### Technical Details
+- **MCP 2024-11-05**: Full compliance with latest MCP protocol specification
+- **Claude Desktop**: Eliminated all validation errors and connection issues
+- **Server capabilities**: Proper capabilities advertisement for tool support
+
 ## [1.0.2] - 2025-05-30
 
 ### Fixed
