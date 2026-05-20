@@ -5,6 +5,28 @@ All notable changes to describe will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-05-20
+
+### Added
+- Official MCP Registry discovery with local caching and built-in offline fallback.
+- Modern MCP server capabilities for tools, resources, and prompts.
+- Tool schemas, output schemas, and annotations for safer client planning.
+- Agent-stack resources: available registry servers, installed servers, and stack design guide.
+- Prompt templates for composing and hardening MCP server stacks.
+- Registry metadata file (`server.json`) for publishing describe as an MCP server package.
+- Remote server registration support.
+
+### Changed
+- Repositioned describe from a package-manager demo to an AI-native MCP capability manager.
+- Removed the runtime dependency on `aiohttp`; registry fetches now use the Python standard library.
+- Updated CLI behavior, package metadata, npm setup, and documentation for v1.1.0.
+- Python package console entry point now launches the CLI instead of the stdio server.
+
+### Fixed
+- Tests now assert JSON-RPC compliant response shapes.
+- Config generation now handles npm, Docker/OCI, PyPI, git, and remote server records.
+- Config file reads and writes now use explicit UTF-8 encoding.
+
 ## [1.0.3] - 2025-05-30
 
 ### Fixed

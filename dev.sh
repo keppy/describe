@@ -5,35 +5,31 @@
 
 set -e
 
-echo "🔧 Setting up describe development environment..."
+echo "Setting up describe development environment..."
 
-# Check for Python
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is required but not found"
+if ! command -v python3 > /dev/null 2>&1; then
+    echo "Python 3 is required but was not found"
     exit 1
 fi
 
-# Create development venv
 if [ ! -d ".venv" ]; then
-    echo "📦 Creating development virtual environment..."
+    echo "Creating development virtual environment..."
     python3 -m venv .venv
 fi
 
-# Activate venv
 source .venv/bin/activate
 
-# Install development dependencies
-echo "📥 Installing dependencies..."
-if command -v uv &> /dev/null; then
-    echo "✓ Using uv"
+echo "Installing development dependencies..."
+if command -v uv > /dev/null 2>&1; then
+    echo "Using uv"
     uv pip install -e ".[dev]"
 else
-    echo "⚡ Using pip"
+    echo "Using pip"
     pip install --upgrade pip
     pip install -e ".[dev]"
 fi
 
-echo "✅ Development environment ready!"
+echo "Development environment ready."
 echo ""
 echo "To activate the environment:"
 echo "  source .venv/bin/activate"
@@ -41,5 +37,5 @@ echo ""
 echo "To run tests:"
 echo "  pytest"
 echo ""
-echo "To run the server:"
+echo "To run the MCP server:"
 echo "  python describe.py"

@@ -1,7 +1,8 @@
 {
   "name": "@keppylab/describe",
-  "version": "1.0.3",
-  "description": "describe - Speak systems into existence. Transform infrastructure from configuration to conversation.",
+  "version": "1.1.0",
+  "description": "describe - AI-native MCP capability discovery, install, and configuration.",
+  "mcpName": "io.github.keppy/describe",
   "main": "describe.py",
   "bin": {
     "describe": "bin/describe"
@@ -19,6 +20,8 @@
     "model-context-protocol",
     "package-manager",
     "mcp-server",
+    "agents",
+    "ai-native",
     "describe",
     "tools"
   ],
@@ -87,13 +90,47 @@
       {
         "name": "installed",
         "description": "List all currently installed MCP servers"
+      },
+      {
+        "name": "config-add",
+        "description": "Add an installed server to the MCP client config"
+      },
+      {
+        "name": "config-remove",
+        "description": "Remove a server from the MCP client config"
+      },
+      {
+        "name": "config-list",
+        "description": "List configured MCP servers"
+      },
+      {
+        "name": "config-backup",
+        "description": "Back up the MCP client config"
+      },
+      {
+        "name": "config-restore",
+        "description": "Restore an MCP client config backup"
+      },
+      {
+        "name": "registry-refresh",
+        "description": "Refresh the official MCP Registry cache"
       }
+    ],
+    "resources": [
+      "describe://registry/available",
+      "describe://servers/installed",
+      "describe://guide/agent-stack"
+    ],
+    "prompts": [
+      "compose-agent-stack",
+      "harden-mcp-config"
     ]
   },
   "files": [
     "describe.py",
     "config_manager.py",
     "pyproject.toml",
+    "server.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE",

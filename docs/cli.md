@@ -1,304 +1,178 @@
 # describe CLI Reference
 
-While describe is designed for conversational use through Claude Desktop, it also provides a powerful CLI for direct terminal usage, scripting, and automation.
+describe is designed to be used by an MCP client, but every operation is also
+available from the terminal.
 
-## Installation
-
-```bash
-npm install -g @keppylab/describe
-```
-
-## Command Overview
+## Usage
 
 ```bash
-describe <command> [options]
+describe [--json] [--debug] <command> [arguments]
 ```
 
-## Package Management Commands
+Global options:
+
+- `--json`: print machine-readable JSON.
+- `--debug`: enable debug logging.
+- `--version`: print the describe version.
+
+## Registry Commands
 
 ### `describe list`
-List all available MCP servers from the official registry.
+
+List servers visible through the Registry cache.
 
 ```bash
 describe list
-# Shows all available servers with descriptions
 ```
 
 ### `describe search <query>`
-Search for MCP servers by name or description.
+
+Search by short name, registry name, package name, title, or description.
 
 ```bash
-describe search database
-# Find all database-related servers
-
 describe search github
-# Find GitHub integration servers
+describe search database
 ```
+
+### `describe registry-refresh`
+
+Refresh the local Registry cache.
+
+```bash
+describe registry-refresh
+```
+
+## Install Commands
 
 ### `describe install <server>`
-Install an MCP server from the registry.
+
+Install or register a server. The server can be a short name, full Registry
+name, or package identifier.
 
 ```bash
-describe install @modelcontextprotocol/server-github
-# Installs the GitHub MCP server
-
-describe install sqlite
-# Installs the SQLite server
+describe install github
+describe install @modelcontextprotocol/server-filesystem
 ```
 
-Supports multiple installation methods:
-- **npm packages**: Installed globally via npm
-- **Docker images**: Pulled and configured
-- **Git repositories**: Cloned to `~/.describe/repos/`
-
-### `describe uninstall <server>`
-Remove an installed MCP server.
+Optionally force an installation method:
 
 ```bash
-describe uninstall server-github
-# Removes the GitHub server
+describe install github --method npm
+describe install com.example/analytics --method remote
+```
+
+Supported methods:
+
+- `npm`: installs globally with `npm install -g`.
+- `docker`: pulls an OCI image with `docker pull`.
+- `pypi`: installs with `python -m pip install --user`.
+- `remote`: records the remote MCP endpoint; no local package install.
+
+### `describe uninstall <server>`
+
+Remove a server from describe's installed database.
+
+```bash
+describe uninstall github
 ```
 
 ### `describe installed`
-Show all currently installed MCP servers.
+
+Show installed or registered servers.
 
 ```bash
 describe installed
-# Lists installed servers with their installation method
 ```
 
-## Configuration Management Commands
+## Config Commands
 
-### `describe config-add <server> [options]`
-Add an installed server to your MCP configuration.
+### `describe config-add <server>`
+
+Generate MCP client config for an installed server and write it to the detected
+client config.
 
 ```bash
-describe config-add server-github
-# Auto-generates appropriate config
-
-describe config-add my-server --command "python" --args "/path/to/server.py"
-# Custom configuration
+describe install github
+describe config-add github
 ```
 
-Options:
-- `--command <cmd>`: Override the command to run
-- `--args <args>`: Override command arguments (comma-separated)
-- `--env <vars>`: Add environment variables (KEY=value,KEY2=value2)
+If Registry metadata declares environment variables, describe uses values from
+your process environment or non-secret defaults. It does not invent secrets.
 
 ### `describe config-remove <server>`
-Remove a server from your MCP configuration.
+
+Remove a server from the MCP client config.
 
 ```bash
-describe config-remove server-github
-# Removes from config (backup created automatically)
+describe config-remove github
 ```
 
 ### `describe config-list`
-List all servers in your MCP configuration.
+
+List configured MCP servers.
 
 ```bash
 describe config-list
-# Shows configured servers with their commands
 ```
 
 ### `describe config-backup`
-Create a backup of your current MCP configuration.
+
+Create a timestamped backup under `~/.describe/backups`.
 
 ```bash
 describe config-backup
-# Creates timestamped backup in ~/.describe/backups/
 ```
 
 ### `describe config-restore <backup>`
-Restore a configuration from backup.
+
+Restore a backup by filename or full path.
 
 ```bash
-describe config-restore config_backup_20240126_143022.json
-# Restores specific backup
-
-describe config-restore --latest
-# Restores most recent backup
-```
-
-## Global Options
-
-### `--version`
-Show describe version.
-
-```bash
-describe --version
-# describe v1.0.0
-```
-
-### `--help`
-Show help for any command.
-
-```bash
-describe --help
-# General help
-
-describe install --help
-# Command-specific help
-```
-
-### `--debug`
-Enable debug logging.
-
-```bash
-describe --debug install server-github
-# Shows detailed installation process
-```
-
-## Configuration Files
-
-### MCP Config Locations
-describe automatically finds your MCP configuration:
-
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **Linux**: `~/.config/claude/claude_desktop_config.json`
-
-### describe Config
-describe stores its own data in `~/.describe/`:
-
-```
-~/.describe/
-├── installed.json      # Installed servers database
-├── backups/           # Configuration backups
-├── repos/             # Git-based servers
-└── cache/             # Downloaded artifacts
-```
-
-## Scripting Examples
-
-### Batch Installation
-```bash
-#!/bin/bash
-servers=("filesystem" "github" "sqlite" "postgres")
-
-for server in "${servers[@]}"; do
-  describe install "$server"
-  describe config-add "$server"
-done
-```
-
-### Backup Before Changes
-```bash
-describe config-backup
-describe install new-server
-describe config-add new-server
-```
-
-### Search and Install
-```bash
-describe search database | grep postgres
-describe install @modelcontextprotocol/server-postgres
+describe config-restore config_backup_20260520_120000.json
 ```
 
 ## Environment Variables
 
-### `DESCRIBE_HOME`
-Override describe's data directory (default: `~/.describe`)
+- `DESCRIBE_HOME`: local state directory. Default: `~/.describe`.
+- `DESCRIBE_REGISTRY`: Registry API URL. Use `builtin` for offline mode.
+- `DESCRIBE_REGISTRY_LIMIT`: maximum servers to cache. Default: `250`.
+- `DESCRIBE_CACHE_TTL_SECONDS`: cache lifetime. Default: `3600`.
+- `DESCRIBE_MCP_CONFIG`: exact MCP config file to edit.
+- `DESCRIBE_MCP_PROTOCOL_VERSION`: protocol version advertised in `initialize`.
+
+## JSON Examples
 
 ```bash
-export DESCRIBE_HOME=/custom/path
-describe list
+describe --json search postgres
 ```
 
-### `DESCRIBE_REGISTRY`
-Use a custom MCP registry URL (for private registries)
+```json
+[
+  {
+    "name": "postgres",
+    "registryName": "io.modelcontextprotocol/postgres",
+    "title": "Postgres",
+    "description": "Read-only PostgreSQL access with schema inspection.",
+    "version": "latest",
+    "status": "active",
+    "installMethods": ["npm"]
+  }
+]
+```
+
+## Scripting Example
 
 ```bash
-export DESCRIBE_REGISTRY=https://my-company.com/mcp-registry.json
-describe list
+set -e
+
+describe install filesystem
+describe config-add filesystem
+describe install github
+describe config-add github
+describe config-list
 ```
 
 ## Exit Codes
 
-- `0`: Success
-- `1`: General error
-- `2`: Server not found
-- `3`: Already installed
-- `4`: Configuration error
-- `5`: Network error
-
-## Advanced Usage
-
-### Custom Installation
-```bash
-# Install from specific npm version
-describe install @modelcontextprotocol/server-github@1.2.3
-
-# Install from git URL
-describe install git+https://github.com/user/mcp-server.git
-
-# Install from local path
-describe install file:///path/to/local/server
-```
-
-### Dry Run
-```bash
-describe install server-github --dry-run
-# Shows what would be installed without doing it
-```
-
-### Force Reinstall
-```bash
-describe install server-github --force
-# Reinstalls even if already installed
-```
-
-## Troubleshooting
-
-### Debug Mode
-```bash
-describe --debug <command>
-# Shows detailed logs for debugging
-```
-
-### Reset describe
-```bash
-rm -rf ~/.describe
-npm reinstall -g @keppylab/describe
-```
-
-### Common Issues
-
-**"Server not found"**
-- Check spelling: `describe search <partial-name>`
-- Update registry: `describe update-registry`
-
-**"Config file not found"**
-- Ensure Claude Desktop is installed
-- Check platform-specific paths above
-- describe will create if missing
-
-**"Permission denied"**
-- npm global installs may need sudo
-- Use npm prefix: `npm config set prefix ~/.npm-global`
-
-## Integration with CI/CD
-
-### GitHub Actions Example
-```yaml
-- name: Setup describe
-  run: npm install -g @keppylab/describe
-
-- name: Install MCP servers
-  run: |
-    describe install filesystem
-    describe install sqlite
-    describe config-add filesystem
-    describe config-add sqlite
-```
-
-### Docker Example
-```dockerfile
-FROM node:18
-RUN npm install -g @keppylab/describe
-RUN describe install filesystem sqlite
-```
-
----
-
-**Note**: While these CLI commands are powerful for automation and scripting, the magic of describe happens when you use it conversationally through Claude Desktop. The CLI exists for power users and automation—the revolution is in the conversation.
+- `0`: command completed successfully.
+- `1`: command failed or returned an error payload.

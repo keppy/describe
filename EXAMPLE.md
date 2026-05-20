@@ -1,241 +1,101 @@
-# The 7-Prompt RAG System
+# Example: Build A Pull Request Review Stack
 
-**Watch infrastructure disappear into conversation.** This is a real transcript of building a complete document Q&A system using describe. No config files. No documentation. Just 7 prompts.
+This example shows describe in its current shape: not just installing servers,
+but giving the AI client a capability map it can inspect before it acts.
 
-**Time**: 8 minutes, 32 seconds  
-**Result**: Working RAG system that can answer questions about your documents
+## Goal
 
----
+Review GitHub pull requests with repository context, code search, and a durable
+record of what was checked.
 
-## The Conversation
+## Conversation
 
-### Prompt 1: "Find me filesystem and database servers"
+### 1. Find The Smallest Stack
 
-**Human**: Find me filesystem and database servers
-
-**Claude**: I'll search for filesystem and database servers using describe.
-
-*[searches with describe]*
-
-Found these servers:
-- **server-filesystem**: File system operations and monitoring
-- **server-sqlite**: SQLite database operations  
-- **server-postgres**: PostgreSQL database interface
-- **mcp-get**: Multi-format file reading (JSON, CSV, TXT, PDF)
-
-For a RAG system, I recommend:
-- `server-filesystem` for reading your documents
-- `server-sqlite` for storing embeddings and metadata
-
----
-
-### Prompt 2: "Install them"
-
-**Human**: Install them
-
-**Claude**: Installing the servers now...
-
-*[installs via describe]*
-
-✅ Installed server-filesystem  
-✅ Installed server-sqlite  
-✅ Added both to your MCP config  
-✅ Backup created automatically
-
-The servers are now available! Ready to build your RAG system.
-
----
-
-### Prompt 3: "Create an embedding schema"
-
-**Human**: Create an embedding schema
-
-**Claude**: I'll create a SQLite schema optimized for document embeddings.
-
-*[creates database schema]*
-
-```sql
-CREATE TABLE documents (
-    id INTEGER PRIMARY KEY,
-    content TEXT NOT NULL,
-    embedding_vector TEXT, -- JSON array of floats
-    source_file TEXT NOT NULL,
-    chunk_index INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_source_file ON documents(source_file);
+```text
+Use describe's compose-agent-stack prompt for this goal:
+review open GitHub pull requests with local repository context.
 ```
 
-Schema created! Ready to store document chunks with embeddings.
+The client should look for capabilities, not package names:
 
----
+- GitHub access for pull request metadata and review posting.
+- Git access for local diffs and history.
+- Filesystem access for scoped repo reads.
+- Optional memory for review notes across sessions.
 
-### Prompt 4: "Read my documents"
+### 2. Search The Registry
 
-**Human**: Read my documents
-
-**Claude**: I'll scan your Documents folder for text files to index.
-
-*[scans filesystem]*
-
-Found 47 documents:
-- 23 markdown files
-- 12 text files  
-- 8 PDFs
-- 4 other formats
-
-Processing them into chunks...
-
-*[chunks documents]*
-
-✅ Processed 1,247 chunks (avg 342 chars each)  
-Ready for embedding and indexing.
-
----
-
-### Prompt 5: "Index them"
-
-**Human**: Index them
-
-**Claude**: Creating embeddings and storing in the database...
-
-*[generates embeddings and stores]*
-
-```
-Processing chunks: ████████████████████ 100%
-├─ Generated embeddings: 1,247
-├─ Stored in SQLite: ✅  
-├─ Index created: ✅
-└─ Average processing: 1.2s per chunk
+```text
+Use describe to search for GitHub, git, filesystem, and memory MCP servers.
 ```
 
-Your document collection is now fully indexed and searchable!
-
----
-
-### Prompt 6: "Make it searchable"
-
-**Human**: Make it searchable
-
-**Claude**: Building the search function with semantic similarity...
-
-*[creates search logic]*
-
-```python
-def search_documents(query, limit=5):
-    # Generate query embedding
-    query_embedding = embed_text(query)
-    
-    # Find similar chunks using cosine similarity
-    results = db.execute("""
-        SELECT content, source_file, 
-               cosine_similarity(embedding_vector, ?) as similarity
-        FROM documents 
-        ORDER BY similarity DESC 
-        LIMIT ?
-    """, [query_embedding, limit])
-    
-    return results
-```
-
-Search function ready! It will find the most relevant chunks for any question.
-
----
-
-### Prompt 7: "Give me a terminal interface"
-
-**Human**: Give me a terminal interface
-
-**Claude**: Creating a terminal interface for your RAG system...
-
-*[builds terminal app]*
-
-```python
-# rag_chat.py - Your personal document Q&A system
-def main():
-    print("🤖 RAG Assistant Ready!")
-    print("Ask questions about your documents...\n")
-    
-    while True:
-        question = input("You: ")
-        if question.lower() in ['quit', 'exit']:
-            break
-            
-        results = search_documents(question)
-        
-        print(f"\n🔍 Found {len(results)} relevant passages:\n")
-        for i, (content, source, score) in enumerate(results, 1):
-            print(f"{i}. {content[:200]}...")
-            print(f"   📄 Source: {source} (relevance: {score:.2f})\n")
-
-if __name__ == "__main__":
-    main()
-```
-
-✅ **Your RAG system is complete!**
-
-Run it with: `python rag_chat.py`
-
----
-
-## The Result
+Equivalent CLI:
 
 ```bash
-$ python rag_chat.py
-🤖 RAG Assistant Ready!
-Ask questions about your documents...
-
-You: What is the main architecture of our system?
-🔍 Found 3 relevant passages:
-
-1. The system follows a microservices architecture with clear separation 
-   between the API layer, business logic, and data persistence...
-   📄 Source: architecture.md (relevance: 0.89)
-
-2. Our main components include the REST API gateway, the processing engine,
-   and the SQLite database for metadata storage...
-   📄 Source: technical-overview.md (relevance: 0.84)
-
-3. The architecture emphasizes modularity and loose coupling between
-   services to enable independent scaling and deployment...
-   📄 Source: design-principles.md (relevance: 0.78)
-
-You: How do we handle authentication?
-🔍 Found 2 relevant passages:
-
-1. Authentication is handled through JWT tokens with a 24-hour expiration.
-   The auth service validates tokens on each request...
-   📄 Source: security.md (relevance: 0.92)
-
-2. We implement OAuth 2.0 for third-party integrations and maintain
-   session state in Redis for performance...
-   📄 Source: api-docs.md (relevance: 0.87)
+describe search github
+describe search git
+describe search filesystem
+describe search memory
 ```
 
-## What Just Happened?
+### 3. Install Only What Is Needed
 
-**In 8 minutes**, you went from zero to a fully functional RAG system that:
-- ✅ Indexes your documents automatically
-- ✅ Understands natural language questions  
-- ✅ Returns relevant passages with sources
-- ✅ Runs entirely in your terminal
-- ✅ Scales to thousands of documents
+```text
+Install github, git, and filesystem. Skip memory for now.
+```
 
-**No configuration files were harmed in the making of this system.**
+Equivalent CLI:
 
----
+```bash
+describe install github
+describe install git
+describe install filesystem
+```
 
-## The Magic
+### 4. Add Config
 
-describe eliminated the traditional barriers:
-- **No server hunting** → describe found them
-- **No installation debugging** → describe handled it
-- **No config file editing** → describe automated it
-- **No documentation reading** → Just conversation
+```text
+Add those installed servers to my MCP config and show the backup path.
+```
 
-This is infrastructure as conversation. This is the future.
+Equivalent CLI:
 
----
+```bash
+describe config-add github
+describe config-add git
+describe config-add filesystem
+describe config-list
+```
 
-*Try it yourself with: `npm install -g @keppylab/describe`*
+### 5. Inspect The Capability Map
+
+```text
+Read describe://servers/installed before reviewing the PR.
+```
+
+The client now has a model-readable resource that tells it what was installed,
+which install method was used, and which config it can rely on.
+
+### 6. Harden Before Use
+
+```text
+Use describe's harden-mcp-config prompt and check for broad filesystem scope,
+missing environment variables, and duplicated servers.
+```
+
+The result should be a small risk review before the AI starts calling tools.
+
+## What Changed From The Old Demo
+
+The old describe demo focused on "RAG in seven prompts." That was useful, but
+it treated MCP servers like packages. The current design treats them as an
+agent capability graph:
+
+- Discovery comes from the Registry, with an offline fallback.
+- Tools are annotated for read-only versus state-changing behavior.
+- Installed state is exposed as resources.
+- Reusable prompts help the client compose and harden stacks.
+- Remote servers are registered as endpoints rather than fake local installs.
+
+The workflow is still conversational. It is just less magical and more useful.

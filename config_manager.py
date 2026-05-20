@@ -12,22 +12,33 @@ import platform
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 logger = logging.getLogger("describe.config")
 
 
 class MCPConfigManager:
-    """Manages MCP configuration files across different platforms"""
+    """Manages MCP configuration files across different platforms."""
 
-    def __init__(self):
-        self.config_path = self._find_config_path()
+    def __init__(
+        self,
+        home: Optional[Union[Path, str]] = None,
+        config_path: Optional[Union[Path, str]] = None,
+    ):
+        self.home = Path(home or os.environ.get("DESCRIBE_HOME", Path.home() / ".describe"))
+        self.config_path = (
+            Path(config_path).expanduser() if config_path else self._find_config_path()
+        )
         self.config: dict[str, Any] = {}
-        self.backup_dir = Path.home() / ".describe" / "backups"
+        self.backup_dir = self.home / "backups"
         self.backup_dir.mkdir(exist_ok=True, parents=True)
 
     def _find_config_path(self) -> Optional[Path]:
         """Find the MCP config file based on platform"""
+        override = os.environ.get("DESCRIBE_MCP_CONFIG")
+        if override:
+            return Path(override).expanduser()
+
         possible_paths = []
 
         if platform.system() == "Darwin":  # macOS
@@ -58,9 +69,12 @@ class MCPConfigManager:
 
         # Check each path
         for path in possible_paths:
-            if path.exists():
-                logger.info(f"Found MCP config at: {path}")
-                return path
+            try:
+                if path.exists():
+                    logger.info(f"Found MCP config at: {path}")
+                    return path
+            except OSError as e:
+                logger.debug(f"Cannot inspect MCP config candidate {path}: {e}")
 
         # If not found, return the most likely path for the platform
         if platform.system() == "Darwin":
@@ -90,7 +104,7 @@ class MCPConfigManager:
             return {"mcpServers": {}}
 
         try:
-            with open(self.config_path) as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 self.config = json.load(f)
 
             # Ensure mcpServers key exists
@@ -128,7 +142,7 @@ class MCPConfigManager:
 
         try:
             # Write with pretty formatting
-            with open(self.config_path, "w") as f:
+            with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(self.config, f, indent=2)
             logger.info(f"Saved config to: {self.config_path}")
         except Exception as e:
@@ -255,21 +269,67 @@ class MCPConfigManager:
     def generate_server_config(self, server_info: dict[str, Any]) -> dict[str, Any]:
         """Generate appropriate config for a server based on its installation method"""
         method = server_info.get("method", "")
+        env = self._environment_from_registry(server_info)
+        package_args = self._package_args_from_registry(server_info)
 
         if method == "npm":
             package = server_info.get("package", "")
-            return {"command": "npx", "args": ["-y", package]}
+            config: dict[str, Any] = {"command": "npx", "args": ["-y", package, *package_args]}
+            if env:
+                config["env"] = env
+            return config
         elif method == "docker":
             image = server_info.get("image", "")
-            return {"command": "docker", "args": ["run", "-i", "--rm", image]}
+            config = {"command": "docker", "args": ["run", "-i", "--rm", image, *package_args]}
+            if env:
+                config["env"] = env
+            return config
+        elif method == "pypi":
+            package = server_info.get("package", "")
+            config = {"command": "uvx", "args": [package, *package_args]}
+            if env:
+                config["env"] = env
+            return config
+        elif method == "remote":
+            url = server_info.get("url", "")
+            transport = server_info.get("transport", {}).get("type", "streamable-http")
+            return {"type": transport, "url": url}
         elif method == "git":
             repo_path = server_info.get("path", "")
             # Assume there's a main script
-            return {
+            config = {
                 "command": "python",
                 "args": [f"{repo_path}/server.py"],
                 "env": {"PYTHONPATH": repo_path},
             }
+            config["env"].update(env)
+            return config
         else:
             # Generic config
             return {"command": "echo", "args": ["Server needs manual configuration"]}
+
+    @staticmethod
+    def _environment_from_registry(server_info: dict[str, Any]) -> dict[str, str]:
+        env: dict[str, str] = {}
+        for item in server_info.get("environmentVariables", []):
+            name = item.get("name")
+            if not name:
+                continue
+            if os.environ.get(name):
+                env[name] = os.environ[name]
+            elif "default" in item and not item.get("isSecret"):
+                env[name] = str(item["default"])
+        return env
+
+    @staticmethod
+    def _package_args_from_registry(server_info: dict[str, Any]) -> list[str]:
+        args: list[str] = []
+        for item in server_info.get("packageArguments", []):
+            value = item.get("default") or item.get("value")
+            if value is None:
+                continue
+            if isinstance(value, list):
+                args.extend(str(part) for part in value)
+            else:
+                args.append(str(value))
+        return args
