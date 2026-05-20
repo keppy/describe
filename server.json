@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.keppy/describe",
+  "title": "describe",
+  "description": "AI-native MCP capability discovery, install, and configuration.",
+  "version": "1.1.0",
+  "repository": {
+    "url": "https://github.com/keppy/describe",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@keppylab/describe",
+      "version": "1.1.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
