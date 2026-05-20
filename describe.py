@@ -1254,9 +1254,16 @@ def _print_result(result: Any, as_json: bool) -> None:
     if isinstance(result, list):
         for item in result:
             if isinstance(item, dict):
-                description = item.get("description", "")
-                title = item.get("title") or item.get("name")
-                print(f"{item.get('name')}: {title} - {description}")
+                name = item.get("name")
+                if item.get("description"):
+                    title = item.get("title") or name
+                    print(f"{name}: {title} - {item['description']}")
+                elif item.get("type") and item.get("url"):
+                    print(f"{name}: {item['type']} {item['url']}")
+                elif item.get("command"):
+                    print(f"{name}: {item['command']} {' '.join(item.get('args', []))}")
+                else:
+                    print(_json_dumps(item))
             else:
                 print(item)
         return

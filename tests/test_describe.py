@@ -6,6 +6,7 @@ Copyright 2024 James Dominguez
 Licensed under the Apache License, Version 2.0
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -345,6 +346,38 @@ def test_config_manager_generate_config(tmp_path, monkeypatch):
     config = config_mgr.generate_server_config(git_details)
     assert config["command"] == "python"
     assert "server.py" in config["args"][0]
+
+
+@pytest.mark.asyncio
+async def test_config_list_includes_remote_type_and_url(tmp_path):
+    config_path = tmp_path / "claude_config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "remote-demo": {
+                        "type": "streamable-http",
+                        "url": "https://mcp.example.test/demo",
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    config_mgr = MCPConfigManager(home=tmp_path, config_path=config_path)
+
+    servers = await config_mgr.list_configured()
+
+    assert servers == [
+        {
+            "name": "remote-demo",
+            "command": "",
+            "args": [],
+            "env": {},
+            "type": "streamable-http",
+            "url": "https://mcp.example.test/demo",
+        }
+    ]
 
 
 if __name__ == "__main__":

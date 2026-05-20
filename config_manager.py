@@ -205,14 +205,17 @@ class MCPConfigManager:
 
         servers = []
         for name, config in self.config.get("mcpServers", {}).items():
-            servers.append(
-                {
-                    "name": name,
-                    "command": config.get("command", ""),
-                    "args": config.get("args", []),
-                    "env": config.get("env", {}),
-                }
-            )
+            server = {
+                "name": name,
+                "command": config.get("command", ""),
+                "args": config.get("args", []),
+                "env": config.get("env", {}),
+            }
+            if "type" in config:
+                server["type"] = config["type"]
+            if "url" in config:
+                server["url"] = config["url"]
+            servers.append(server)
 
         return servers
 
